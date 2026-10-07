@@ -1,0 +1,14 @@
+server/.env
+server/.venv
+server/data/*.sqlite3
+mobile/node_modules
+mobile/.expo
+mobile/dist
+mobile/.env
+mobile/android/.gradle
+mobile/android/build
+mobile/android/app/build
+mobile/ios/Pods
+mobile/ios/build
+*.log
+.agents/
