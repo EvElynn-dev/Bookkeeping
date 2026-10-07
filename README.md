@@ -68,6 +68,7 @@ POST /books/join
 GET  /books/{book_id}
 GET  /books/{book_id}/expenses
 POST /books/{book_id}/expenses
+PUT  /books/{book_id}/expenses/{expense_id}
 DELETE /books/{book_id}/expenses/{expense_id}
 GET  /books/{book_id}/settlements
 POST /books/{book_id}/settlements
@@ -78,6 +79,6 @@ GET  /books/{book_id}/balance
 
 ## 当前状态
 
-首版界面使用本地演示数据启动，方便直接查看参考 UI。登录成功后，客户端会尝试读取第一个远程账本和远程支出；如果服务器暂时不可用，仍保留本地演示数据，界面不会白屏。新增支出、备注、账本创建、邀请码加入和双方结算都已经接入自建 API，登录 token 会保存到系统安全存储中。
+首版界面使用本地演示数据启动，方便直接查看参考 UI。登录成功后，客户端会尝试读取第一个远程账本和远程支出；如果服务器暂时不可用，仍保留本地演示数据，界面不会白屏。新增、编辑、删除支出，备注、账本创建、邀请码加入和双方结算都已经接入自建 API，登录 token 会保存到系统安全存储中。点击支出明细可以打开编辑和删除操作，结算成功后首页会重新读取双方余额。
 
 当前 CI/CD 已覆盖 API 编译、移动端 TypeScript、Expo 配置检查。部署 workflow 监听 `CI` 成功结果，仅在 `main` 分支检查通过后 SSH 到服务器更新代码并重建容器；也可以在 GitHub Actions 页面手动触发部署。Android Debug APK 已在本机编译通过；iOS 原生编译需要完整 Xcode 和 CocoaPods 环境。
