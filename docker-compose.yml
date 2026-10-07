@@ -1,0 +1,13 @@
+services:
+  api:
+    build: ./server
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./server/.env
+    volumes:
+      - ledger-data:/app/data
+
+volumes:
+  ledger-data:
