@@ -385,6 +385,33 @@ def create_expense(book_id: str, payload: ExpensePayload, user: sqlite3.Row = De
     return expense_response(row)
 
 
+@app.put('/books/{book_id}/expenses/{expense_id}')
+def update_expense(book_id: str, expense_id: str, payload: ExpensePayload, user: sqlite3.Row = Depends(current_user)) -> dict[str, Any]:
+    require_book_member(book_id, user['id'])
+    participants = list(dict.fromkeys(payload.participants))
+    with db() as connection:
+        members_rows = connection.execute('SELECT user_id FROM book_members WHERE book_id = ?', (book_id,)).fetchall()
+        member_ids = {row['user_id'] for row in members_rows}
+        if payload.payer_id not in member_ids or any(member not in member_ids for member in participants):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='支出成员不属于当前账本')
+        timestamp = now_iso()
+        cursor = connection.execute(
+            '''UPDATE expenses SET
+                amount_fen = ?, title = ?, category_id = ?, category_label = ?, note = ?,
+                spent_at = ?, payer_id = ?, participants_json = ?, updated_at = ?
+               WHERE id = ? AND book_id = ?''',
+            (
+                payload.amount_fen, payload.title.strip(), payload.category_id, payload.category_label,
+                payload.note, payload.spent_at, payload.payer_id, json.dumps(participants), timestamp,
+                expense_id, book_id,
+            ),
+        )
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='支出不存在')
+        row = connection.execute('SELECT * FROM expenses WHERE id = ?', (expense_id,)).fetchone()
+    return expense_response(row)
+
+
 @app.delete('/books/{book_id}/expenses/{expense_id}')
 def delete_expense(book_id: str, expense_id: str, user: sqlite3.Row = Depends(current_user)) -> dict[str, bool]:
     require_book_member(book_id, user['id'])
