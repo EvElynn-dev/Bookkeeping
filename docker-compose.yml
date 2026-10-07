@@ -1,6 +1,8 @@
 services:
   api:
-    build: ./server
+    build:
+      context: ./server
+      network: host
     restart: unless-stopped
     ports:
       - "8000:8000"
