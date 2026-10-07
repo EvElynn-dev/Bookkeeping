@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+  Alert,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -79,10 +80,14 @@ function Header({ onMenu, onBooks }: { onMenu: () => void; onBooks: () => void }
   );
 }
 
-function SummaryCard({ expenses }: { expenses: Expense[] }) {
+function SummaryCard({ expenses, balance, currentUserId }: { expenses: Expense[]; balance?: BalanceEntry[]; currentUserId?: string }) {
   const total = expenses.reduce((sum, expense) => sum + expense.amountFen, 0);
-  const me = expenses.filter((expense) => expense.payerId === 'me').reduce((sum, expense) => sum + expense.amountFen, 0);
-  const partner = expenses.filter((expense) => expense.payerId === 'partner').reduce((sum, expense) => sum + expense.amountFen, 0);
+  const localMe = expenses.filter((expense) => expense.payerId === 'me').reduce((sum, expense) => sum + expense.amountFen, 0);
+  const localPartner = expenses.filter((expense) => expense.payerId === 'partner').reduce((sum, expense) => sum + expense.amountFen, 0);
+  const remoteMe = balance?.find((entry) => entry.id === currentUserId)?.net_fen;
+  const remotePartner = balance?.find((entry) => entry.id !== currentUserId)?.net_fen;
+  const me = remoteMe ?? -localMe;
+  const partner = remotePartner ?? -localPartner;
   return (
     <View style={styles.summaryCard}>
       <View style={styles.summaryHeader}>
@@ -128,23 +133,23 @@ function SummaryCard({ expenses }: { expenses: Expense[] }) {
         <View style={styles.couplePerson}>
           <Avatar member="me" size={32} />
           <Text style={styles.coupleName}>我</Text>
-          <Text style={styles.coupleAmount}>−{formatMoney(me)}</Text>
+          <Text style={styles.coupleAmount}>{formatMoney(me, true)}</Text>
         </View>
         <View style={styles.coupleDivider} />
         <View style={styles.couplePerson}>
           <Avatar member="partner" size={32} />
           <Text style={styles.coupleName}>{members.partner.name}</Text>
-          <Text style={styles.coupleAmount}>−{formatMoney(partner)}</Text>
+          <Text style={styles.coupleAmount}>{formatMoney(partner, true)}</Text>
         </View>
       </View>
     </View>
   );
 }
 
-function ExpenseRow({ expense }: { expense: Expense }) {
+function ExpenseRow({ expense, onPress }: { expense: Expense; onPress: () => void }) {
   const isShared = expense.participants.length > 1;
   return (
-    <View style={styles.expenseRow}>
+    <Pressable style={styles.expenseRow} onPress={onPress} accessibilityRole="button" accessibilityLabel={`编辑${expense.title}`}>
       <View style={[styles.categoryIcon, { backgroundColor: categories.find((category) => category.id === expense.categoryId)?.tint ?? '#F2F3F7' }]}>
         <Text style={styles.categoryEmoji}>{expense.categoryEmoji}</Text>
       </View>
@@ -157,11 +162,11 @@ function ExpenseRow({ expense }: { expense: Expense }) {
         </View>
       </View>
       <Text style={styles.expenseAmount}>−{formatMoney(expense.amountFen)}</Text>
-    </View>
+    </Pressable>
   );
 }
 
-function ExpenseList({ expenses }: { expenses: Expense[] }) {
+function ExpenseList({ expenses, onExpensePress }: { expenses: Expense[]; onExpensePress: (expense: Expense) => void }) {
   const groups = expenses.reduce<Record<string, Expense[]>>((acc, expense) => {
     const date = formatDate(expense.spentAt);
     acc[date] = [...(acc[date] ?? []), expense];
@@ -177,7 +182,7 @@ function ExpenseList({ expenses }: { expenses: Expense[] }) {
           </View>
           {items.map((expense, index) => (
             <View key={expense.id}>
-              <ExpenseRow expense={expense} />
+              <ExpenseRow expense={expense} onPress={() => onExpensePress(expense)} />
               {index < items.length - 1 && <View style={styles.rowDivider} />}
             </View>
           ))}
@@ -206,20 +211,26 @@ function QuickBar({ onAdd }: { onAdd: () => void }) {
 
 function HomeScreen({
   expenses,
+  balance,
+  currentUserId,
   onMenu,
   onBooks,
   onAdd,
+  onExpensePress,
 }: {
   expenses: Expense[];
+  balance?: BalanceEntry[];
+  currentUserId?: string;
   onMenu: () => void;
   onBooks: () => void;
   onAdd: () => void;
+  onExpensePress: (expense: Expense) => void;
 }) {
   return (
     <View style={styles.flex}>
       <Header onMenu={onMenu} onBooks={onBooks} />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.homeContent}>
-        <SummaryCard expenses={expenses} />
+        <SummaryCard expenses={expenses} balance={balance} currentUserId={currentUserId} />
         <View style={styles.sectionHeading}>
           <Text style={styles.sectionTitle}>记录明细</Text>
           <AppIcon name="chevron-forward" size={22} color={colors.faint} />
@@ -227,7 +238,7 @@ function HomeScreen({
             <MaterialCommunityIcons name="cash-register" size={21} color={colors.primary} />
           </Pressable>
         </View>
-        <ExpenseList expenses={expenses} />
+        <ExpenseList expenses={expenses} onExpensePress={onExpensePress} />
       </ScrollView>
       <QuickBar onAdd={onAdd} />
     </View>
@@ -423,11 +434,13 @@ function BalanceModal({
   session,
   book,
   expenses,
+  onSettled,
 }: {
   onClose: () => void;
   session: AuthResponse | null;
   book: Book | null;
   expenses: Expense[];
+  onSettled: () => Promise<void> | void;
 }) {
   const [entries, setEntries] = useState<BalanceEntry[]>([]);
   const [amount, setAmount] = useState('');
@@ -483,6 +496,7 @@ function BalanceModal({
       setAmount('');
       setMessage('已记录结算');
       await refresh();
+      await onSettled();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : '保存结算失败');
     } finally {
@@ -615,6 +629,86 @@ function FilterChip({ icon, label, active = false }: { icon: IconName; label: st
   return <View style={[styles.filterChip, active && styles.activeFilterChip]}><AppIcon name={icon} size={17} color={active ? colors.primary : colors.secondaryInk} /><Text style={[styles.filterChipText, active && { color: colors.primary }]}>{label}</Text></View>;
 }
 
+function ExpenseActionModal({
+  expense,
+  onClose,
+  onEdit,
+  onDelete,
+}: {
+  expense: Expense;
+  onClose: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <Modal visible transparent animationType="fade" onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        <View style={styles.expenseActionCard}>
+          <View style={styles.expenseActionIcon}><Text style={styles.categoryLargeEmoji}>{expense.categoryEmoji}</Text></View>
+          <Text style={styles.expenseActionTitle}>{expense.title}</Text>
+          <Text style={styles.expenseActionAmount}>−{formatMoney(expense.amountFen)}</Text>
+          <Text style={styles.expenseActionMeta}>{formatDate(expense.spentAt)} · {expense.categoryLabel}{expense.note ? ` · ${expense.note}` : ''}</Text>
+          <View style={styles.expenseActionButtons}>
+            <Pressable style={styles.expenseActionButton} onPress={onEdit}><AppIcon name="create-outline" size={20} color={colors.primary} /><Text style={styles.expenseActionButtonText}>编辑</Text></Pressable>
+            <Pressable style={[styles.expenseActionButton, styles.expenseDeleteButton]} onPress={onDelete}><AppIcon name="trash-outline" size={20} color={colors.red} /><Text style={[styles.expenseActionButtonText, { color: colors.red }]}>删除</Text></Pressable>
+          </View>
+          <Pressable style={styles.expenseCancelButton} onPress={onClose}><Text style={styles.expenseCancelText}>取消</Text></Pressable>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function ExpenseEditModal({
+  expense,
+  onClose,
+  onSave,
+}: {
+  expense: Expense;
+  onClose: () => void;
+  onSave: (expense: Expense) => void;
+}) {
+  const [title, setTitle] = useState(expense.title);
+  const [amount, setAmount] = useState((expense.amountFen / 100).toFixed(2));
+  const [note, setNote] = useState(expense.note ?? '');
+  const [message, setMessage] = useState('');
+
+  const save = () => {
+    const amountFen = Math.round(Number(amount) * 100);
+    if (!title.trim()) {
+      setMessage('请填写支出名称');
+      return;
+    }
+    if (!Number.isFinite(amountFen) || amountFen <= 0) {
+      setMessage('请输入有效金额');
+      return;
+    }
+    onSave({ ...expense, title: title.trim(), amountFen, note: note.trim() || undefined });
+  };
+
+  return (
+    <Modal visible animationType="slide" onRequestClose={onClose}>
+      <SafeAreaView style={styles.manageScreen}>
+        <View style={styles.authHeader}><Pressable onPress={onClose}><AppIcon name="chevron-down" size={28} color={colors.secondaryInk} /></Pressable><Text style={styles.authTitle}>编辑支出</Text><View style={{ width: 28 }} /></View>
+        <ScrollView contentContainerStyle={styles.manageBody}>
+          <View style={styles.currentBookCard}>
+            <View style={styles.editCategoryRow}><View style={[styles.categoryIcon, { backgroundColor: categories.find((category) => category.id === expense.categoryId)?.tint ?? '#F2F3F7' }]}><Text style={styles.categoryEmoji}>{expense.categoryEmoji}</Text></View><View><Text style={styles.manageEyebrow}>{expense.categoryLabel}</Text><Text style={styles.editSplitText}>{expense.participants.length > 1 ? '共同分摊' : expense.payerId === 'me' ? '我承担' : '对方承担'}</Text></View></View>
+          </View>
+          <Text style={styles.manageSectionTitle}>名称</Text>
+          <TextInput value={title} onChangeText={setTitle} placeholder="例如：晚餐" placeholderTextColor={colors.faint} style={styles.authInput} />
+          <Text style={styles.manageSectionTitle}>金额（人民币）</Text>
+          <TextInput value={amount} onChangeText={setAmount} keyboardType="decimal-pad" placeholder="0.00" placeholderTextColor={colors.faint} style={styles.authInput} />
+          <Text style={styles.manageSectionTitle}>备注</Text>
+          <TextInput value={note} onChangeText={setNote} placeholder="可选" placeholderTextColor={colors.faint} style={[styles.authInput, styles.editNoteInput]} multiline />
+          <Pressable style={styles.authSubmit} onPress={save}><Text style={styles.authSubmitText}>保存修改</Text></Pressable>
+          {!!message && <Text style={styles.authMessage}>{message}</Text>}
+        </ScrollView>
+      </SafeAreaView>
+    </Modal>
+  );
+}
+
 function AuthModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (result: AuthResponse) => void }) {
   const [register, setRegister] = useState(false);
   const [email, setEmail] = useState('');
@@ -663,6 +757,10 @@ export default function App() {
   const [expenseVisible, setExpenseVisible] = useState(false);
   const [balanceVisible, setBalanceVisible] = useState(false);
   const [authVisible, setAuthVisible] = useState(false);
+  const [balanceEntries, setBalanceEntries] = useState<BalanceEntry[]>([]);
+  const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
+  const [expenseActionVisible, setExpenseActionVisible] = useState(false);
+  const [expenseEditVisible, setExpenseEditVisible] = useState(false);
 
   const sortedExpenses = useMemo(() => [...expenses].sort((a, b) => b.spentAt.localeCompare(a.spentAt)), [expenses]);
 
@@ -685,6 +783,12 @@ export default function App() {
       participants: (Array.isArray(item.participants) ? item.participants : []).map((id) => id === memberIds.me ? 'me' : 'partner'),
     } as Expense));
     setExpenses(mapped);
+    try {
+      const balance = await api.getBalance(result.token, book.id);
+      setBalanceEntries(balance.members);
+    } catch {
+      setBalanceEntries([]);
+    }
   };
 
   const applyRemoteSession = async (result: AuthResponse) => {
@@ -729,34 +833,95 @@ export default function App() {
     }
   };
 
+  const refreshRemoteBook = async () => {
+    if (!session || !serverBook) return;
+    try {
+      await applyRemoteBook(session, serverBook);
+    } catch {
+      // Keep the optimistic local state visible if the self-hosted API is temporarily unavailable.
+    }
+  };
+
+  const remoteMemberId = (member: MemberId) => {
+    if (!session || !serverBook) return undefined;
+    const partnerId = serverBook.members.find((bookMember) => bookMember.id !== session.user.id)?.id ?? session.user.id;
+    return member === 'me' ? session.user.id : partnerId;
+  };
+
+  const remoteExpensePayload = (expense: Expense) => ({
+    amount_fen: expense.amountFen,
+    title: expense.title,
+    category_id: expense.categoryId,
+    category_label: expense.categoryLabel,
+    note: expense.note,
+    spent_at: expense.spentAt,
+    payer_id: remoteMemberId(expense.payerId),
+    participants: expense.participants.map(remoteMemberId),
+  });
+
   const saveExpense = (expense: Expense) => {
     setExpenses((items) => [expense, ...items]);
     if (session && serverBook) {
-      const meId = session.user.id;
-      const partnerId = serverBook.members.find((member) => member.id !== meId)?.id ?? meId;
-      const memberId = (member: MemberId) => member === 'me' ? meId : partnerId;
-      void api.createExpense(session.token, serverBook.id, {
-        amount_fen: expense.amountFen,
-        title: expense.title,
-        category_id: expense.categoryId,
-        category_label: expense.categoryLabel,
-        note: expense.note,
-        spent_at: expense.spentAt,
-        payer_id: memberId(expense.payerId),
-        participants: expense.participants.map(memberId),
-      }).catch(() => undefined);
+      void api.createExpense(session.token, serverBook.id, remoteExpensePayload(expense)).then(refreshRemoteBook).catch(() => undefined);
     }
+  };
+
+  const openExpense = (expense: Expense) => {
+    setSelectedExpense(expense);
+    setExpenseActionVisible(true);
+  };
+
+  const updateExpense = (nextExpense: Expense) => {
+    if (!selectedExpense) return;
+    const previousExpenses = expenses;
+    setExpenses((items) => items.map((item) => item.id === nextExpense.id ? nextExpense : item));
+    setExpenseEditVisible(false);
+    setSelectedExpense(null);
+    if (session && serverBook) {
+      void api.updateExpense(session.token, serverBook.id, nextExpense.id, remoteExpensePayload(nextExpense))
+        .then(refreshRemoteBook)
+        .catch((error) => {
+          setExpenses(previousExpenses);
+          Alert.alert('保存失败', error instanceof Error ? error.message : '暂时无法同步这笔支出');
+        });
+    }
+  };
+
+  const deleteExpense = (expense: Expense) => {
+    Alert.alert('删除这笔支出？', `「${expense.title}」将从账本中移除。`, [
+      { text: '取消', style: 'cancel' },
+      {
+        text: '删除',
+        style: 'destructive',
+        onPress: () => {
+          const previousExpenses = expenses;
+          setExpenses((items) => items.filter((item) => item.id !== expense.id));
+          setExpenseActionVisible(false);
+          setSelectedExpense(null);
+          if (session && serverBook) {
+            void api.deleteExpense(session.token, serverBook.id, expense.id)
+              .then(refreshRemoteBook)
+              .catch((error) => {
+                setExpenses(previousExpenses);
+                Alert.alert('删除失败', error instanceof Error ? error.message : '暂时无法同步删除操作');
+              });
+          }
+        },
+      },
+    ]);
   };
 
   return (
     <SafeAreaView style={styles.app}>
       <StatusBar style="dark" />
-      <HomeScreen expenses={sortedExpenses} onMenu={() => setDrawerVisible(true)} onBooks={() => setBookPickerVisible(true)} onAdd={() => setExpenseVisible(true)} />
+      <HomeScreen expenses={sortedExpenses} balance={balanceEntries} currentUserId={session?.user.id} onMenu={() => setDrawerVisible(true)} onBooks={() => setBookPickerVisible(true)} onAdd={() => setExpenseVisible(true)} onExpensePress={openExpense} />
       {drawerVisible && <Drawer sessionName={session?.user.name} onClose={() => setDrawerVisible(false)} onAuth={() => { setDrawerVisible(false); setAuthVisible(true); }} onBalance={() => { setDrawerVisible(false); setBalanceVisible(true); }} />}
       {bookPickerVisible && <BookPicker book={serverBook} onClose={() => setBookPickerVisible(false)} onManage={() => { setBookPickerVisible(false); setBookManagerVisible(true); }} />}
       {bookManagerVisible && <BookManagerModal session={session} book={serverBook} onClose={() => setBookManagerVisible(false)} onAuth={() => { setBookManagerVisible(false); setAuthVisible(true); }} onBookChange={handleBookChange} />}
       {expenseVisible && <ExpenseSheet onClose={() => setExpenseVisible(false)} onSave={saveExpense} />}
-      {balanceVisible && <BalanceModal session={session} book={serverBook} expenses={sortedExpenses} onClose={() => setBalanceVisible(false)} />}
+      {balanceVisible && <BalanceModal session={session} book={serverBook} expenses={sortedExpenses} onClose={() => setBalanceVisible(false)} onSettled={refreshRemoteBook} />}
+      {selectedExpense && expenseActionVisible && <ExpenseActionModal expense={selectedExpense} onClose={() => { setExpenseActionVisible(false); setSelectedExpense(null); }} onEdit={() => { setExpenseActionVisible(false); setExpenseEditVisible(true); }} onDelete={() => deleteExpense(selectedExpense)} />}
+      {selectedExpense && expenseEditVisible && <ExpenseEditModal expense={selectedExpense} onClose={() => { setExpenseEditVisible(false); setSelectedExpense(null); }} onSave={updateExpense} />}
       {authVisible && <AuthModal onClose={() => setAuthVisible(false)} onSuccess={handleAuthSuccess} />}
     </SafeAreaView>
   );
@@ -817,6 +982,17 @@ const styles = StyleSheet.create({
   pillText: { fontSize: 12, fontWeight: '600' },
   expenseAmount: { color: colors.primary, fontSize: 19, fontWeight: '800', alignSelf: 'flex-start', marginTop: 4 },
   rowDivider: { height: 1, backgroundColor: colors.border, marginLeft: 61 },
+  expenseActionCard: { width: '84%', backgroundColor: colors.surface, borderRadius: 25, padding: 22, alignSelf: 'center', marginTop: 'auto', marginBottom: 'auto', alignItems: 'center', ...shadow.card },
+  expenseActionIcon: { width: 66, height: 66, borderRadius: 33, backgroundColor: colors.primaryPale, alignItems: 'center', justifyContent: 'center', marginBottom: 11 },
+  expenseActionTitle: { color: colors.ink, fontSize: 24, fontWeight: '800' },
+  expenseActionAmount: { color: colors.primary, fontSize: 28, fontWeight: '800', marginTop: 6 },
+  expenseActionMeta: { color: colors.muted, fontSize: 13, textAlign: 'center', lineHeight: 20, marginTop: 8 },
+  expenseActionButtons: { width: '100%', flexDirection: 'row', gap: 10, marginTop: 22 },
+  expenseActionButton: { flex: 1, height: 48, borderRadius: 14, backgroundColor: colors.primaryPale, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
+  expenseDeleteButton: { backgroundColor: '#FFF0F0' },
+  expenseActionButtonText: { color: colors.primary, fontSize: 15, fontWeight: '800' },
+  expenseCancelButton: { height: 45, alignItems: 'center', justifyContent: 'center', marginTop: 5 },
+  expenseCancelText: { color: colors.muted, fontSize: 15, fontWeight: '700' },
   quickBarWrap: { position: 'absolute', left: 19, right: 19, bottom: 13 },
   quickBar: { height: 58, backgroundColor: 'rgba(255,255,255,0.97)', borderRadius: 30, borderWidth: 1, borderColor: '#DCE0E9', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, ...shadow.card },
   quickAvatar: { fontSize: 26, marginRight: 10 },
@@ -925,6 +1101,9 @@ const styles = StyleSheet.create({
   secondarySubmit: { height: 54, borderRadius: 17, borderWidth: 1, borderColor: colors.primary, backgroundColor: colors.primaryPale, alignItems: 'center', justifyContent: 'center', marginTop: 8 },
   secondarySubmitText: { color: colors.primary, fontSize: 16, fontWeight: '800' },
   manageMessage: { color: colors.green, textAlign: 'center', fontSize: 14, lineHeight: 20, marginTop: 16 },
+  editCategoryRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  editSplitText: { color: colors.secondaryInk, fontSize: 15, marginTop: 4 },
+  editNoteInput: { minHeight: 92, paddingTop: 16, textAlignVertical: 'top' },
   balanceHero: { backgroundColor: colors.primary, borderRadius: 24, paddingHorizontal: 22, paddingVertical: 24, ...shadow.card },
   balanceAmount: { color: colors.surface, fontSize: 40, fontWeight: '800', marginTop: 8, letterSpacing: -1 },
   balanceDescription: { color: 'rgba(255,255,255,0.82)', fontSize: 14, marginTop: 5 },

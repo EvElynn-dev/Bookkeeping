@@ -67,6 +67,17 @@ export const api = {
       token,
       body: JSON.stringify(payload),
     }),
+  updateExpense: (token: string, bookId: string, expenseId: string, payload: unknown) =>
+    request(`/books/${bookId}/expenses/${expenseId}`, {
+      method: 'PUT',
+      token,
+      body: JSON.stringify(payload),
+    }),
+  deleteExpense: (token: string, bookId: string, expenseId: string) =>
+    request<{ deleted: boolean }>(`/books/${bookId}/expenses/${expenseId}`, {
+      method: 'DELETE',
+      token,
+    }),
   getBalance: (token: string, bookId: string) =>
     request<{ members: BalanceEntry[] }>(`/books/${bookId}/balance`, { token }),
   createSettlement: (token: string, bookId: string, payload: unknown) =>
