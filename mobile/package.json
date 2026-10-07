@@ -1,0 +1,27 @@
+{
+  "name": "together-ledger-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "main": "expo/AppEntry.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "web": "expo start --web",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@expo/vector-icons": "^14.1.0",
+    "expo": "~54.0.0",
+    "expo-secure-store": "~14.2.4",
+    "expo-status-bar": "~2.2.3",
+    "react": "19.1.0",
+    "react-native": "0.81.4",
+    "react-native-safe-area-context": "~5.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "~19.1.10",
+    "typescript": "~5.9.2"
+  }
+}

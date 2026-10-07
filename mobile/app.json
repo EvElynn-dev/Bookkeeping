@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "一起记账",
+    "slug": "together-ledger",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "together-ledger",
+    "splash": {
+      "backgroundColor": "#F5F6FB"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "local.togetherledger.app"
+    },
+    "android": {
+      "package": "local.togetherledger.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#4775EE"
+      }
+    }
+  }
+}
