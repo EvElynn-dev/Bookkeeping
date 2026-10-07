@@ -32,16 +32,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: pnpm
           cache-dependency-path: mobile/pnpm-lock.yaml
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 11.25.0
       - name: Install mobile dependencies
         working-directory: mobile
         run: pnpm install --frozen-lockfile
