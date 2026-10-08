@@ -2,7 +2,7 @@
   "name": "together-ledger-mobile",
   "version": "0.1.0",
   "private": true,
-  "main": "expo/AppEntry.js",
+  "main": "index.js",
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
@@ -22,6 +22,7 @@
   "devDependencies": {
     "@types/node": "^22.10.0",
     "@types/react": "~19.1.10",
+    "babel-preset-expo": "54.0.12",
     "typescript": "~5.9.2"
   }
 }
