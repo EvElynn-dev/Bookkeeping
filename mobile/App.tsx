@@ -106,7 +106,7 @@ function SummaryCard({ expenses, balance, currentUserId }: { expenses: Expense[]
           <View style={[styles.labelLine, { backgroundColor: colors.primary }]} />
           <Text style={styles.summaryLabel}>月支出</Text>
         </View>
-        <Text style={styles.totalAmount}>{formatMoney(total)}</Text>
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.86} style={styles.totalAmount}>{formatMoney(total)}</Text>
         <AppIcon name="eye-outline" size={19} color={colors.faint} />
       </View>
       <View style={styles.summaryBottom}>
@@ -134,13 +134,13 @@ function SummaryCard({ expenses, balance, currentUserId }: { expenses: Expense[]
         <View style={styles.couplePerson}>
           <Avatar member="me" size={32} />
           <Text style={styles.coupleName}>我</Text>
-          <Text style={styles.coupleAmount}>{formatMoney(me, true)}</Text>
+          <Text numberOfLines={1} style={styles.coupleAmount}>{formatMoney(me, true)}</Text>
         </View>
         <View style={styles.coupleDivider} />
         <View style={styles.couplePerson}>
           <Avatar member="partner" size={32} />
           <Text style={styles.coupleName}>{members.partner.name}</Text>
-          <Text style={styles.coupleAmount}>{formatMoney(partner, true)}</Text>
+          <Text numberOfLines={1} style={styles.coupleAmount}>{formatMoney(partner, true)}</Text>
         </View>
       </View>
     </View>
@@ -938,7 +938,7 @@ const styles = StyleSheet.create({
   header: { minHeight: 68, paddingHorizontal: 22, flexDirection: 'row', alignItems: 'center', gap: 10 },
   iconButton: { width: 32, height: 42, alignItems: 'flex-start', justifyContent: 'center' },
   titleButton: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  pageTitle: { color: colors.ink, fontSize: 30, fontWeight: '800', letterSpacing: -1 },
+  pageTitle: { color: colors.ink, fontSize: 27, fontWeight: '700', letterSpacing: -0.5 },
   headerActions: { flex: 1, flexDirection: 'row', justifyContent: 'flex-end', gap: 10 },
   searchButton: { width: 52, height: 49, borderRadius: 15, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', ...shadow.card },
   bookButton: { height: 49, maxWidth: 170, paddingHorizontal: 13, borderRadius: 15, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', gap: 7, ...shadow.card },
@@ -953,39 +953,39 @@ const styles = StyleSheet.create({
   monthExpenseBlock: { paddingHorizontal: 24, paddingTop: 22, flexDirection: 'row', alignItems: 'center', gap: 9 },
   labelWithLine: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   labelLine: { width: 4, height: 24, borderRadius: 5 },
-  summaryLabel: { color: colors.secondaryInk, fontSize: 19 },
-  totalAmount: { color: colors.ink, fontSize: 42, lineHeight: 52, fontWeight: '800', letterSpacing: -1 },
-  summaryBottom: { paddingHorizontal: 24, paddingTop: 14, paddingBottom: 18, flexDirection: 'row', alignItems: 'flex-end', gap: 34 },
-  smallSummaryLabel: { color: colors.secondaryInk, fontSize: 15 },
-  smallAmount: { color: colors.ink, fontSize: 22, fontWeight: '700', marginTop: 7 },
+  summaryLabel: { color: colors.secondaryInk, fontSize: 17 },
+  totalAmount: { color: colors.ink, fontSize: 38, lineHeight: 47, fontWeight: '700', letterSpacing: -0.7, flexShrink: 1 },
+  summaryBottom: { paddingHorizontal: 24, paddingTop: 12, paddingBottom: 18, flexDirection: 'row', alignItems: 'flex-end', gap: 28 },
+  smallSummaryLabel: { color: colors.secondaryInk, fontSize: 14 },
+  smallAmount: { color: colors.ink, fontSize: 20, fontWeight: '700', marginTop: 6 },
   budgetRing: { marginLeft: 'auto', width: 116, height: 116, borderRadius: 58, borderWidth: 9, borderColor: '#E8E8EA', alignItems: 'center', justifyContent: 'center' },
   budgetTitle: { color: colors.muted, fontSize: 15, fontWeight: '600' },
   budgetSub: { color: colors.muted, fontSize: 11, marginTop: 4 },
   budgetArrow: { color: colors.primary, fontSize: 24, lineHeight: 25, fontWeight: '800' },
-  coupleBar: { backgroundColor: colors.lilac, paddingHorizontal: 22, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 13 },
-  couplePerson: { flexDirection: 'row', alignItems: 'center', gap: 5, flexShrink: 1 },
+  coupleBar: { backgroundColor: colors.lilac, paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  couplePerson: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 4 },
   avatar: { backgroundColor: '#F8F8FC', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.surface },
-  coupleName: { backgroundColor: colors.surface, color: colors.secondaryInk, fontSize: 13, paddingHorizontal: 7, paddingVertical: 4, borderRadius: radii.pill },
-  coupleAmount: { color: '#2458C8', fontSize: 18, fontWeight: '700', flexShrink: 1 },
+  coupleName: { backgroundColor: colors.surface, color: colors.secondaryInk, fontSize: 12, paddingHorizontal: 6, paddingVertical: 4, borderRadius: radii.pill, flexShrink: 1 },
+  coupleAmount: { color: '#2458C8', fontSize: 16, fontWeight: '700', flexShrink: 0, letterSpacing: -0.2 },
   coupleDivider: { width: 1, height: 23, backgroundColor: '#A9BDEB' },
   sectionHeading: { marginTop: 27, marginBottom: 13, paddingHorizontal: 8, flexDirection: 'row', alignItems: 'center', gap: 3 },
-  sectionTitle: { color: colors.ink, fontSize: 25, fontWeight: '800' },
+  sectionTitle: { color: colors.ink, fontSize: 23, fontWeight: '700' },
   exportButton: { marginLeft: 'auto', width: 45, height: 45, borderRadius: 14, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', ...shadow.card },
   listCard: { backgroundColor: colors.surface, borderRadius: radii.large, paddingHorizontal: 20, paddingTop: 22, ...shadow.card },
   dateRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  dateTitle: { color: colors.ink, fontSize: 18, fontWeight: '800' },
+  dateTitle: { color: colors.ink, fontSize: 17, fontWeight: '700' },
   dateWeekday: { color: colors.muted, fontSize: 15, fontWeight: '500' },
   dateTotal: { color: colors.muted, fontSize: 14 },
   expenseRow: { flexDirection: 'row', alignItems: 'center', minHeight: 92, gap: 13 },
   categoryIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   categoryEmoji: { fontSize: 25 },
   expenseInfo: { flex: 1, minWidth: 0 },
-  expenseTitle: { color: colors.ink, fontSize: 19, fontWeight: '800' },
+  expenseTitle: { color: colors.ink, fontSize: 18, fontWeight: '700' },
   expenseMeta: { color: colors.muted, fontSize: 13, marginTop: 5 },
   expenseTags: { flexDirection: 'row', gap: 5, marginTop: 8 },
   pill: { borderRadius: radii.pill, paddingHorizontal: 9, paddingVertical: 4 },
   pillText: { fontSize: 12, fontWeight: '600' },
-  expenseAmount: { color: colors.primary, fontSize: 19, fontWeight: '800', alignSelf: 'flex-start', marginTop: 4 },
+  expenseAmount: { color: colors.primary, fontSize: 18, fontWeight: '700', alignSelf: 'flex-start', marginTop: 4 },
   rowDivider: { height: 1, backgroundColor: colors.border, marginLeft: 61 },
   expenseActionCard: { width: '84%', backgroundColor: colors.surface, borderRadius: 25, padding: 22, alignSelf: 'center', marginTop: 'auto', marginBottom: 'auto', alignItems: 'center', ...shadow.card },
   expenseActionIcon: { width: 66, height: 66, borderRadius: 33, backgroundColor: colors.primaryPale, alignItems: 'center', justifyContent: 'center', marginBottom: 11 },
