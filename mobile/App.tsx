@@ -591,7 +591,7 @@ function ExpenseSheet({ onClose, onSave }: { onClose: () => void; onSave: (expen
             <Pressable style={styles.aiButton}><Text style={styles.aiButtonText}>⇄ AI助手</Text></Pressable>
             <Pressable onPress={onClose} style={styles.closeButton}><AppIcon name="close" size={22} color={colors.secondaryInk} /></Pressable>
           </View>
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 18 }}>
+          <ScrollView style={styles.sheetScroll} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 18 }}>
             <CategoryPicker selected={selectedCategory} onSelect={setSelectedCategory} />
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterChips}>
               <FilterChip icon="calendar-outline" label="10月7日" />
@@ -613,14 +613,14 @@ function ExpenseSheet({ onClose, onSave }: { onClose: () => void; onSave: (expen
               <Pressable onPress={() => setSplit('partner')}><Pill tone={split === 'partner' ? 'blue' : 'gray'}>对方承担</Pill></Pressable>
               <Pressable onPress={() => setSplit('both')}><Pill tone={split === 'both' ? 'blue' : 'gray'}>共同</Pill></Pressable>
             </View>
-            <View style={styles.keypad}>
-              {['1', '2', '3', 'delete', '4', '5', '6', '+', '7', '8', '9', '−', '再记', '0', '.', '完成'].map((key) => (
-                <Pressable key={key} onPress={() => key === '完成' ? save() : key === '再记' ? setAmount('0') : pressKey(key)} style={[styles.key, key === '完成' && styles.doneKey, key === '再记' && styles.repeatKey]}>
-                  {key === 'delete' ? <AppIcon name="backspace-outline" size={25} color={colors.secondaryInk} /> : <Text style={[styles.keyText, key === '完成' && styles.doneKeyText, key === '再记' && styles.repeatKeyText]}>{key}</Text>}
-                </Pressable>
-              ))}
-            </View>
           </ScrollView>
+          <View style={styles.keypad}>
+            {['1', '2', '3', 'delete', '4', '5', '6', '+', '7', '8', '9', '−', '再记', '0', '.', '完成'].map((key) => (
+              <Pressable key={key} onPress={() => key === '完成' ? save() : key === '再记' ? setAmount('0') : pressKey(key)} style={[styles.key, key === '完成' && styles.doneKey, key === '再记' && styles.repeatKey]}>
+                {key === 'delete' ? <AppIcon name="backspace-outline" size={25} color={colors.secondaryInk} /> : <Text style={[styles.keyText, key === '完成' && styles.doneKeyText, key === '再记' && styles.repeatKeyText]}>{key}</Text>}
+              </Pressable>
+            ))}
+          </View>
         </View>
       </KeyboardAvoidingView>
     </Modal>
@@ -1048,7 +1048,8 @@ const styles = StyleSheet.create({
   addBookText: { color: colors.muted, fontSize: 17 },
   sheetOverlay: { flex: 1, justifyContent: 'flex-end' },
   sheetBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: colors.overlay },
-  expenseSheet: { backgroundColor: colors.background, borderTopLeftRadius: 28, borderTopRightRadius: 28, maxHeight: '94%', paddingHorizontal: 15, paddingTop: 9 },
+  expenseSheet: { backgroundColor: colors.background, borderTopLeftRadius: 28, borderTopRightRadius: 28, height: '94%', maxHeight: '94%', paddingHorizontal: 15, paddingTop: 9, paddingBottom: Platform.OS === 'ios' ? 28 : 10 },
+  sheetScroll: { flex: 1 },
   sheetHandle: { width: 48, height: 5, borderRadius: 5, backgroundColor: '#D4D7DE', alignSelf: 'center', marginBottom: 12 },
   sheetHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 9, marginBottom: 19 },
   sheetTabs: { flexDirection: 'row', gap: 28, alignItems: 'center', flex: 1 },
@@ -1076,8 +1077,8 @@ const styles = StyleSheet.create({
   noteInput: { color: colors.ink, fontSize: 15, flex: 1 },
   splitRow: { flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 5, paddingVertical: 12 },
   splitLabel: { color: colors.muted, fontSize: 13, marginRight: 3 },
-  keypad: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 0 },
-  key: { width: '23.8%', height: 64, borderRadius: 17, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
+  keypad: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 0, paddingBottom: 10 },
+  key: { width: '22%', height: 64, borderRadius: 17, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
   keyText: { color: colors.secondaryInk, fontSize: 25, fontWeight: '600' },
   doneKey: { backgroundColor: '#82A4F3' },
   doneKeyText: { color: colors.surface, fontWeight: '800' },
