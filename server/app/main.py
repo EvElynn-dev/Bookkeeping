@@ -15,6 +15,7 @@ from typing import Any, List, Optional
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, Field, field_validator
 
@@ -23,6 +24,8 @@ ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = Path(os.getenv('DATA_DIR', ROOT / 'data'))
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 DB_PATH = Path(os.getenv('DB_PATH', DATA_DIR / 'ledger.sqlite3'))
+RELEASE_DIR = Path(os.getenv('RELEASE_DIR', ROOT / 'releases'))
+RELEASE_DIR.mkdir(parents=True, exist_ok=True)
 TOKEN_SECRET = os.getenv('TOKEN_SECRET', 'replace-this-secret-before-public-deploy')
 TOKEN_TTL_SECONDS = 60 * 60 * 24 * 30
 
@@ -207,6 +210,7 @@ class SettlementPayload(BaseModel):
 
 
 app = FastAPI(title='一起记账 API', version='0.1.0')
+app.mount('/downloads', StaticFiles(directory=RELEASE_DIR), name='downloads')
 app.add_middleware(
     CORSMiddleware,
     allow_origins=['*'],
@@ -224,6 +228,25 @@ def on_startup() -> None:
 @app.get('/health')
 def health() -> dict[str, str]:
     return {'status': 'ok'}
+
+
+@app.get('/app/update')
+def app_update() -> dict[str, Any]:
+    metadata_path = RELEASE_DIR / 'update.json'
+    if metadata_path.is_file():
+        try:
+            metadata = json.loads(metadata_path.read_text(encoding='utf-8'))
+            if isinstance(metadata, dict) and isinstance(metadata.get('latest_version'), str):
+                return metadata
+        except (OSError, json.JSONDecodeError):
+            pass
+    return {
+        'latest_version': '0.1.0',
+        'latest_version_code': 1,
+        'android_path': None,
+        'ios_url': None,
+        'notes': None,
+    }
 
 
 def user_response(user: sqlite3.Row, token: str) -> dict[str, Any]:

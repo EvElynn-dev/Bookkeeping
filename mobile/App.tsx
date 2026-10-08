@@ -17,6 +17,7 @@ import { StatusBar } from 'expo-status-bar';
 import * as SecureStore from 'expo-secure-store';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { api, AuthResponse, BalanceEntry, Book } from './src/api';
+import { checkForAppUpdate } from './src/update';
 import {
   categories,
   demoExpenses,
@@ -761,6 +762,10 @@ export default function App() {
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
   const [expenseActionVisible, setExpenseActionVisible] = useState(false);
   const [expenseEditVisible, setExpenseEditVisible] = useState(false);
+
+  useEffect(() => {
+    void checkForAppUpdate();
+  }, []);
 
   const sortedExpenses = useMemo(() => [...expenses].sort((a, b) => b.spentAt.localeCompare(a.spentAt)), [expenses]);
 

@@ -1,4 +1,4 @@
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8000';
+export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8000';
 
 type RequestOptions = RequestInit & { token?: string };
 
@@ -35,7 +35,16 @@ export type BalanceEntry = {
   net_fen: number;
 };
 
+export type AppUpdate = {
+  latest_version: string;
+  latest_version_code: number;
+  android_path?: string | null;
+  ios_url?: string | null;
+  notes?: string | null;
+};
+
 export const api = {
+  getAppUpdate: () => request<AppUpdate>('/app/update'),
   register: (email: string, password: string, name: string) =>
     request<AuthResponse>('/auth/register', {
       method: 'POST',

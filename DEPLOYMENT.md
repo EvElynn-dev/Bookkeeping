@@ -79,3 +79,16 @@ GitHub Actions CI
 - 手机不能使用服务器上的 `localhost`
 
 密码登录接口应通过 HTTPS 使用。个人自用时可以只在自己的内网或 VPN 中开放 API 端口；如果暴露到公网，先配置反向代理和 TLS。
+
+## 移动端更新
+
+推送到 `main` 后，CI 会在通过 API 和移动端检查后构建 Android Release APK。部署 workflow 会把 APK 和版本元数据上传到服务器的 `releases/` 目录，并通过以下接口提供给 App：
+
+```text
+GET /app/update
+GET /downloads/android/latest.apk
+```
+
+Android App 启动时检查 `/app/update`。发现更高版本后会打开 APK 下载地址，下载完成后由 Android 系统显示安装确认；这是个人自用的用户确认更新，不是静默安装。当前 Release 使用仓库内的 debug keystore 供个人设备使用，因此必须保留同一把签名密钥，否则 Android 会拒绝覆盖安装。这个签名方式不能用于正式商店发布。
+
+iOS 不允许 App 从自有服务器下载并直接替换自身二进制。iOS 更新应使用 App Store 或 TestFlight；自有服务器只能托管已签名的 Ad Hoc/企业分发包，并且受设备注册、证书和 Apple 许可范围限制。当前 App 会识别到 iOS 新版本，但提示通过 App Store/TestFlight 更新。

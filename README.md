@@ -81,4 +81,6 @@ GET  /books/{book_id}/balance
 
 首版界面使用本地演示数据启动，方便直接查看参考 UI。登录成功后，客户端会尝试读取第一个远程账本和远程支出；如果服务器暂时不可用，仍保留本地演示数据，界面不会白屏。新增、编辑、删除支出，备注、账本创建、邀请码加入和双方结算都已经接入自建 API，登录 token 会保存到系统安全存储中。点击支出明细可以打开编辑和删除操作，结算成功后首页会重新读取双方余额。
 
-当前 CI/CD 已覆盖 API 编译、移动端 TypeScript、Expo 配置检查。部署 workflow 监听 `CI` 成功结果，仅在 `main` 分支检查通过后 SSH 到服务器更新代码并重建容器；也可以在 GitHub Actions 页面手动触发部署。Android Debug APK 已在本机编译通过；iOS 原生编译需要完整 Xcode 和 CocoaPods 环境。
+当前 CI/CD 已覆盖 API 编译、移动端 TypeScript、Expo 配置检查和 `main` 分支 Android Release APK 构建。部署 workflow 监听 `CI` 成功结果，仅在 `main` 分支检查通过后 SSH 到服务器更新代码、上传 Android APK 并重建容器；也可以在 GitHub Actions 页面手动触发部署。Android App 会在启动时检查 `/app/update`，发现新版本后打开 APK 下载并交给系统确认安装。
+
+iOS 原生工程已经通过 Xcode/CocoaPods 编译。iOS 不允许从自有服务器直接替换 App 二进制，真实设备更新需要 App Store/TestFlight；自有服务器托管的 Ad Hoc/企业包还需要 Apple 签名、设备注册和相应分发资格。

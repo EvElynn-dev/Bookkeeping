@@ -10,6 +10,7 @@ services:
       - ./server/.env
     volumes:
       - ledger-data:/app/data
+      - ./releases:/app/releases:ro
 
 volumes:
   ledger-data:
