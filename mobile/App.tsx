@@ -257,7 +257,7 @@ const drawerFeatures: { label: string; icon: IconName }[] = [
   { label: '标签管理', icon: 'bookmark-outline' },
 ];
 
-function Drawer({ onClose, onAuth, onBalance, sessionName }: { onClose: () => void; onAuth: () => void; onBalance: () => void; sessionName?: string }) {
+function Drawer({ onClose, onAuth, onBalance, onCheckUpdate, sessionName }: { onClose: () => void; onAuth: () => void; onBalance: () => void; onCheckUpdate: () => void; sessionName?: string }) {
   const { width } = useWindowDimensions();
   return (
     <Modal visible transparent animationType="fade" onRequestClose={onClose}>
@@ -302,6 +302,7 @@ function Drawer({ onClose, onAuth, onBalance, sessionName }: { onClose: () => vo
               <QuickAction icon="refresh-outline" label="定时记账" />
             </View>
             <View style={styles.drawerLinks}>
+              <DrawerLink icon="cloud-download-outline" label="检查更新" onPress={onCheckUpdate} />
               <DrawerLink icon="settings-outline" label="设置" />
               <DrawerLink icon="receipt-outline" label="填问卷参与共建" />
               <DrawerLink icon="wallet-outline" label="双人结算" onPress={onBalance} />
@@ -826,6 +827,11 @@ export default function App() {
     await applyRemoteSession(result);
   };
 
+  const handleCheckUpdate = () => {
+    setDrawerVisible(false);
+    void checkForAppUpdate({ notifyIfCurrent: true, notifyOnError: true });
+  };
+
   const handleBookChange = async (book: Book) => {
     setServerBook(book);
     setBookManagerVisible(false);
@@ -920,7 +926,7 @@ export default function App() {
     <SafeAreaView style={styles.app}>
       <StatusBar style="dark" />
       <HomeScreen expenses={sortedExpenses} balance={balanceEntries} currentUserId={session?.user.id} onMenu={() => setDrawerVisible(true)} onBooks={() => setBookPickerVisible(true)} onAdd={() => setExpenseVisible(true)} onExpensePress={openExpense} />
-      {drawerVisible && <Drawer sessionName={session?.user.name} onClose={() => setDrawerVisible(false)} onAuth={() => { setDrawerVisible(false); setAuthVisible(true); }} onBalance={() => { setDrawerVisible(false); setBalanceVisible(true); }} />}
+      {drawerVisible && <Drawer sessionName={session?.user.name} onClose={() => setDrawerVisible(false)} onAuth={() => { setDrawerVisible(false); setAuthVisible(true); }} onBalance={() => { setDrawerVisible(false); setBalanceVisible(true); }} onCheckUpdate={handleCheckUpdate} />}
       {bookPickerVisible && <BookPicker book={serverBook} onClose={() => setBookPickerVisible(false)} onManage={() => { setBookPickerVisible(false); setBookManagerVisible(true); }} />}
       {bookManagerVisible && <BookManagerModal session={session} book={serverBook} onClose={() => setBookManagerVisible(false)} onAuth={() => { setBookManagerVisible(false); setAuthVisible(true); }} onBookChange={handleBookChange} />}
       {expenseVisible && <ExpenseSheet onClose={() => setExpenseVisible(false)} onSave={saveExpense} />}
